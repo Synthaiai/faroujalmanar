@@ -603,6 +603,7 @@
             if (event.touches.length > 1) event.preventDefault();
         }, { passive:false });
         const ADMIN_EMAIL_KEY = 'fm_admin_email';
+        const FIXED_ADMIN_EMAIL = atob('YWJkaHVsbGFmaXJhc0BnbWFpbC5jb20=');
         const LOGIN_GUARD_KEY = 'fm_admin_login_guard';
         const MAX_LOGIN_ATTEMPTS = 4;
         const LOCK_DURATION_MS = 3 * 60 * 60 * 1000;
@@ -683,12 +684,8 @@
         async function checkPass() {
             if(updateLoginLockUI()) return;
             const pass = document.getElementById('adminPass').value;
-            const email = localStorage.getItem(ADMIN_EMAIL_KEY) || firebase.auth().currentUser?.email || '';
+            const email = FIXED_ADMIN_EMAIL || localStorage.getItem(ADMIN_EMAIL_KEY) || firebase.auth().currentUser?.email || '';
             if (!pass) { showErr('يرجى إدخال كلمة المرور'); return; }
-            if (!email) {
-                showErr('لم يتم ربط حساب المدير بهذا الجهاز بعد. افتح الجلسة القديمة مرة واحدة ثم حدّث الصفحة.');
-                return;
-            }
 
             const btn = document.getElementById('loginBtn');
             const orig = btn.innerText;
