@@ -2633,6 +2633,32 @@
     #mImgW .m-img-wrap,#mImgW .m-ph { height:100%; }
     #mImgW .m-img { width:100%; height:100%; object-fit:cover; }
     @media(hover:none) { .ic:hover { transform:none; box-shadow:0 5px 14px rgba(11,41,85,.12); } .ic:hover .ic-img { transform:none; } .ic:active { transform:scale(.98); } }
+    /* Responsive reliability: cards must never depend on an observer to exist. */
+    html { background:#eef3f8; }
+    body { width:100%; max-width:1200px; margin-inline:auto; }
+    .ic,.ic.reveal { opacity:1; transform:none; content-visibility:visible; }
+    @media (max-width:479px) {
+      .sec { padding-inline:11px; }
+      .grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+      .ic-body { padding:9px 10px 11px; }
+      .ic-name { font-size:12px !important; }
+      .ic-price { font-size:14px !important; }
+    }
+    @media (max-width:340px) {
+      .sec { padding-inline:8px; }
+      .grid { gap:8px; }
+      .ic-body { padding:7px 8px 9px; }
+      .ic-desc { display:none; }
+      .hdr { padding-inline:8px; }
+      .hdr-center { width:230px; }
+    }
+    @media (min-width:900px) {
+      .sec { padding-inline:28px; }
+      .grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+    }
+    @media (min-width:1100px) {
+      .grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px; }
+    }
   </style>
 </head>
 
@@ -2848,14 +2874,14 @@
         fetchJson(dbUrl('items'), 20000)
       ]).then(([categories, items]) => {
         // الأصناف وحدها هي الشرط — أقسام بلا أصناف تعني طلباً ناقصاً
-        if (items) loadFromData({ categories, items }, 1);
+        if (items) applyMenuData({ categories, items }, 1);
       });
     }
 
     function initFirebase() {
       // 1. عرض فوري من البيانات المحلية حتى لا تكون الشاشة فارغة.
       if (typeof initialData !== 'undefined') {
-        loadFromData(initialData, 0);
+        applyMenuData(initialData, 0);
       }
 
       // 2. المصدر الأساسي: طلب REST خفيف للأقسام والأصناف فقط.
@@ -2873,7 +2899,7 @@
         // المستمعان منفصلان — لا نعرض شيئاً قبل وصول الأصناف، وإلا اعتُبرت
         // البيانات فارغة فرجع الموقع إلى القائمة المحلية القديمة لحظياً.
         if (!liveItems) return;
-        loadFromData({ categories: liveCats, items: liveItems }, 2);
+        applyMenuData({ categories: liveCats, items: liveItems }, 2);
       };
       const onErr = () => console.log('Firebase realtime unavailable, using REST data.');
 
@@ -2887,6 +2913,20 @@
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) refreshMenu();
     });
+
+    function applyMenuData(data, rank) {
+      try {
+        loadFromData(data, rank);
+      } catch (error) {
+        console.error('Menu render failed; restoring bundled menu.', error);
+        if (typeof initialData !== 'undefined' && data !== initialData) {
+          DATA_RANK = -1;
+          try { loadFromData(initialData, 0); } catch (fallbackError) {
+            console.error('Bundled menu restore failed.', fallbackError);
+          }
+        }
+      }
+    }
 
     function loadFromData(data, rank) {
       if (typeof rank !== 'number') rank = 2;
@@ -2969,6 +3009,18 @@
       populate();
       refreshUploadedImages(mergedItems);
       setTimeout(initReveal, 100);
+    }
+
+    function ensureMenuVisible() {
+      const productCards = document.querySelectorAll('.grid .ic:not(.skeleton)').length;
+      if (productCards > 0) {
+        syncViewportHeight(activeSectionId, true);
+        return;
+      }
+      if (typeof initialData !== 'undefined') {
+        DATA_RANK = -1;
+        applyMenuData(initialData, 0);
+      }
     }
 
     function renderLiveUI() {
@@ -3419,6 +3471,9 @@
     initFirebase();
     initReveal();
     initSwipe('mov', closeModal);
+    setTimeout(ensureMenuVisible, 900);
+    setTimeout(ensureMenuVisible, 3000);
+    window.addEventListener('pageshow', () => setTimeout(ensureMenuVisible, 100));
 
     // تخزين ملفات الواجهة والصور محلياً لتسريع الموقع على رصيد آسيا/زين
     // وإبقاء المنيو قابلاً للفتح عند ضعف أو انقطاع الشبكة.
