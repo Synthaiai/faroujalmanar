@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 180" role="img" aria-label="Farouj Almanar">
+  <g fill="#ffffff"><path d="M17 25h53v42H17zM17 91h53v65H17zM92 25h47v131H92z"/><path d="M156 26c42 0 70 25 70 65s-28 65-70 65h-10V26zm-9 40v50c17-1 29-10 29-25s-12-24-29-25z"/></g>
+  <g fill="#f5b718"><circle cx="79" cy="84" r="15"/><path d="M144 16h16v32h-16z"/></g>
+  <text x="255" y="79" fill="#ffffff" font-family="Arial, sans-serif" font-size="44" font-weight="800">Farouj</text>
+  <text x="255" y="125" fill="#ffffff" font-family="Arial, sans-serif" font-size="44" font-weight="800">Almanar</text>
+  <text x="258" y="156" fill="#f5b718" font-family="Arial, sans-serif" font-size="16" font-weight="700">فروج المنار</text>
+</svg>
