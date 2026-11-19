@@ -2580,10 +2580,9 @@
     .ic-body { position:relative; z-index:2; flex:0 0 auto; width:100%; min-height:0; padding:10px 11px; gap:3px; }
     .ic-name { min-height:0; font-size:14px !important; font-weight:600 !important; line-height:1.5; color:#fff; overflow-wrap:anywhere; }
     .ic-desc { min-height:0; font-size:10px; line-height:1.5; color:#d8e3f3; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
-    .ic-foot { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:2px; padding-top:4px; }
+    .ic-foot { display:flex; align-items:center; justify-content:flex-start; gap:6px; margin-top:2px; padding-top:4px; }
     .ic-price { margin:0; padding:0; background:none; font-family:var(--font-ui); font-size:17px !important; font-weight:700 !important; color:#f5c52e !important; letter-spacing:0; white-space:nowrap; }
     .ic-currency { font-size:10px; font-weight:400; margin-inline-start:3px; }
-    .ic-open { display:grid; place-items:center; flex-shrink:0; width:25px; height:25px; border:0; background:#f5b718; border-radius:50%; color:#102d53; font-size:16px; line-height:1; }
     .modal { border-radius:32px 32px 20px 20px; }
     .m-name { font-family:var(--font-ui); font-weight:600; }
     @media(min-width:680px){ .sec{padding-inline:24px}.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.ic-body{padding:18px}.ic-name{font-size:16px !important} }
@@ -3096,7 +3095,7 @@
             ${bdg(item.badge)}
           </div>
           ${item.desc ? `<div class="ic-desc">${esc(item.desc)}</div>` : ''}
-          <div class="ic-foot"><span class="ic-price">${item.price.toLocaleString()}<span class="ic-currency">د.ع</span></span><span class="ic-open" aria-hidden="true">↗</span></div>
+          <div class="ic-foot"><span class="ic-price">${item.price.toLocaleString()}<span class="ic-currency">د.ع</span></span></div>
         </div>
         <div class="ic-img-wrap">
           <div class="ic-img-box"${hasImage ? ` data-img-id="${item.id}" data-img-alt="${esc(item.name)}"${cached ? ' data-img-done="1"' : ''}` : ''}>
