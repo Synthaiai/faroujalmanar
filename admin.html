@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -597,6 +597,11 @@
            تسجيل الدخول عبر حساب المدير في Firebase (آمن).
            الإيميل ثابت، وكلمة السر مخزّنة ومشفّرة داخل Firebase — غير موجودة بالكود. */
         let initialized = false;
+        document.addEventListener('gesturestart', event => event.preventDefault(), { passive:false });
+        document.addEventListener('gesturechange', event => event.preventDefault(), { passive:false });
+        document.addEventListener('touchmove', event => {
+            if (event.touches.length > 1) event.preventDefault();
+        }, { passive:false });
         const ADMIN_EMAIL_KEY = 'fm_admin_email';
         const LOGIN_GUARD_KEY = 'fm_admin_login_guard';
         const MAX_LOGIN_ATTEMPTS = 4;

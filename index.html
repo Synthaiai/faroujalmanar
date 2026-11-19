@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -3474,6 +3474,13 @@
     setTimeout(ensureMenuVisible, 900);
     setTimeout(ensureMenuVisible, 3000);
     window.addEventListener('pageshow', () => setTimeout(ensureMenuVisible, 100));
+
+    // Keep the mobile layout at its designed scale without blocking normal scrolling.
+    document.addEventListener('gesturestart', event => event.preventDefault(), { passive:false });
+    document.addEventListener('gesturechange', event => event.preventDefault(), { passive:false });
+    document.addEventListener('touchmove', event => {
+      if (event.touches.length > 1) event.preventDefault();
+    }, { passive:false });
 
     // تخزين ملفات الواجهة والصور محلياً لتسريع الموقع على رصيد آسيا/زين
     // وإبقاء المنيو قابلاً للفتح عند ضعف أو انقطاع الشبكة.
