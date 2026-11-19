@@ -9,21 +9,15 @@
   <meta http-equiv="Expires" content="0">
   <title>فروج المنار — المنيو</title>
   <meta name="description" content="منيو فروج المنار الإلكتروني">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://www.gstatic.com">
-  <link rel="preconnect" href="https://unpkg.com">
-  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" as="style">
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
-  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
-  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/light/style.css">
+  <link rel="icon" type="image/webp" href="assets/brand/farouj-logo-small.webp">
+  <link rel="apple-touch-icon" href="assets/brand/farouj-icon.png">
+  <link rel="stylesheet" href="assets/vendor/local-fonts.css">
+  <link rel="stylesheet" href="assets/vendor/phosphor/bold/style.css">
+  <link rel="stylesheet" href="assets/vendor/phosphor/fill/style.css">
+  <link rel="stylesheet" href="assets/vendor/phosphor/light/style.css">
   <!-- Firebase SDK -->
   <script src="assets/vendor/firebase-app-compat.js"></script>
   <script src="assets/vendor/firebase-database-compat.js"></script>
-  <!-- Cascadia Mono via Fontsource CDN: for numbers & prices -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cascadia-mono@5.0.18/index.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#153f7a">
 
@@ -2650,7 +2644,7 @@
       <!-- Empty for balance -->
     </div>
     <div class="hdr-center">
-      <img class="brand-lockup" src="assets/brand/farouj-logo.png" alt="فروج المنار">
+      <img class="brand-lockup" src="assets/brand/farouj-logo-small.webp" alt="فروج المنار">
     </div>
     <div class="hdr-left">
       <!-- Empty for balance -->
@@ -2762,22 +2756,41 @@
     }
 
     // يجلب صورة صنف واحد عند الحاجة فقط، ويحفظها في الذاكرة.
-    function getItemImage(id) {
+    function localItemImage(id) {
+      if (typeof initialData === 'undefined' || !initialData.items) return '';
+      const item = initialData.items.find(entry => String(entry.id) === String(id));
+      return item && item.img ? String(item.img) : '';
+    }
+
+    function getItemImage(id, forceRemote = false) {
       const key = String(id);
-      if (IMG_CACHE.has(key))   return Promise.resolve(IMG_CACHE.get(key));
-      if (IMG_PENDING.has(key)) return IMG_PENDING.get(key);
+      const pendingKey = forceRemote ? 'remote:' + key : key;
+      if (!forceRemote && IMG_CACHE.has(key)) return Promise.resolve(IMG_CACHE.get(key));
+      if (IMG_PENDING.has(pendingKey)) return IMG_PENDING.get(pendingKey);
+      const fallback = localItemImage(key);
       if (typeof firebaseConfig === 'undefined' || !firebaseConfig.databaseURL) {
-        return Promise.resolve(null);
+        return Promise.resolve(fallback || null);
       }
-      const p = fetchJson(dbUrl('images/' + encodeURIComponent(key)), 30000)
+      const p = fetchJson(dbUrl('images/' + encodeURIComponent(key)), 5000)
         .then(v => {
           const url = (typeof v === 'string' && v.trim() !== '') ? v : null;
-          IMG_PENDING.delete(key);
+          IMG_PENDING.delete(pendingKey);
           if (url) IMG_CACHE.set(key, url);   // لا نخزّن الفشل حتى نعيد المحاولة لاحقاً
-          return url;
+          else if (fallback) IMG_CACHE.set(key, fallback);
+          return url || fallback || null;
         });
-      IMG_PENDING.set(key, p);
+      IMG_PENDING.set(pendingKey, p);
       return p;
+    }
+
+    function refreshUploadedImages(items) {
+      items.filter(item => item && item._usesCloudImage).forEach(item => {
+        getItemImage(item.id, true).then(url => {
+          if (!url) return;
+          document.querySelectorAll(`[data-img-id="${String(item.id)}"] img`).forEach(img => { img.src = url; });
+          document.querySelectorAll(`[data-feature-img-id="${String(item.id)}"]`).forEach(img => { img.src = url; });
+        });
+      });
     }
 
     function itemHasImage(it) {
@@ -2943,8 +2956,9 @@
         if ((!merged.img || String(merged.img).startsWith('assets/menu/')) && local) merged.img = local.img;
         if (!merged.badge && local && local.badge) merged.badge = local.badge;
         if (usesCloudImage) {
-          // امسح النسخة السابقة كي يجلب المتصفح الصورة المحفوظة حديثاً.
-          IMG_CACHE.delete(String(merged.id));
+          // اعرض النسخة المحلية فوراً، ثم حدّثها بالخلفية من السحابة.
+          if (local && local.img) IMG_CACHE.set(String(merged.id), local.img);
+          else IMG_CACHE.delete(String(merged.id));
         } else if (merged.img && String(merged.img).trim() !== '') {
           IMG_CACHE.set(String(merged.id), merged.img);
         }
@@ -2953,6 +2967,7 @@
 
       renderLiveUI();
       populate();
+      refreshUploadedImages(mergedItems);
       setTimeout(initReveal, 100);
     }
 

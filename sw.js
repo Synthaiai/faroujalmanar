@@ -1,13 +1,27 @@
-const CACHE = 'oris-shell-v5';
-const SHELL = [
-  './', './index.html', './firebase-config.js', './manifest.json',
+const CACHE = 'farouj-offline-v7';
+const CORE = [
+  './', './index.html', './admin.html', './firebase-config.js',
+  './manifest.json', './offline-assets.json',
   './assets/vendor/firebase-app-compat.js',
-  './assets/vendor/firebase-database-compat.js'
+  './assets/vendor/firebase-database-compat.js',
+  './assets/vendor/firebase-auth-compat.js'
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)));
-  self.skipWaiting();
+  event.waitUntil((async () => {
+    let offlineAssets = [];
+    try {
+      const response = await fetch('./offline-assets.json', { cache:'reload' });
+      if (response.ok) offlineAssets = await response.json();
+    } catch (_) {}
+    const cache = await caches.open(CACHE);
+    const assets = [...new Set([...CORE, ...offlineAssets])];
+    await Promise.allSettled(assets.map(async asset => {
+      const response = await fetch(asset, { cache:'reload' });
+      if (response.ok) await cache.put(asset, response);
+    }));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', event => {
@@ -37,11 +51,22 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then(response => cacheResponse(event, request, response))
-        .catch(() => caches.match(request).then(hit => hit || caches.match('./index.html')))
-    );
+    event.respondWith((async () => {
+      const cached = await caches.match(request);
+      const fallback = url.pathname.startsWith('/admin') ? './admin.html' : './index.html';
+      if (cached) {
+        event.waitUntil(fetch(request)
+          .then(response => cacheResponse(event, request, response))
+          .catch(() => undefined));
+        return cached;
+      }
+      try {
+        const response = await fetch(request);
+        return cacheResponse(event, request, response);
+      } catch (_) {
+        return (await caches.match(fallback)) || Response.error();
+      }
+    })());
     return;
   }
 

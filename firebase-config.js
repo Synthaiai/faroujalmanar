@@ -153,7 +153,8 @@ const itemPhoto = {
 items.forEach(item => {
   const photo = itemPhoto[item.id];
   if (!photo) return;
-  item.img = `assets/menu/farouj/${photo.includes('.') ? photo : `${photo}.webp`}`;
+  const photoFile = photo.replace(/\.(?:png|jpe?g|webp)$/i, '') + '.webp';
+  item.img = `assets/menu/farouj/optimized/${photoFile}`;
   item.hasImg = true;
 });
 const initialData = { categories, items };
