@@ -3490,7 +3490,16 @@
     // تخزين ملفات الواجهة والصور محلياً لتسريع الموقع على رصيد آسيا/زين
     // وإبقاء المنيو قابلاً للفتح عند ضعف أو انقطاع الشبكة.
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+      let refreshedWorker = false;
+      const hadWorker = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (hadWorker && !refreshedWorker) {
+          refreshedWorker = true;
+          location.reload();
+        }
+      });
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js', {updateViaCache:'none'})
+        .then(registration => registration.update()).catch(() => {}));
     }
   </script>
   <script>

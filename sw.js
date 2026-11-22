@@ -1,4 +1,4 @@
-const CACHE = 'farouj-offline-v12';
+const CACHE = 'farouj-offline-v13';
 const CORE = [
   './', './index.html', './admin.html', './firebase-config.js',
   './manifest.json', './offline-assets.json',
@@ -54,18 +54,15 @@ self.addEventListener('fetch', event => {
     event.respondWith((async () => {
       const cached = await caches.match(request);
       const fallback = url.pathname.startsWith('/admin') ? './admin.html' : './index.html';
-      if (cached) {
-        event.waitUntil(fetch(request)
-          .then(response => cacheResponse(event, request, response))
-          .catch(() => undefined));
-        return cached;
-      }
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2500);
       try {
-        const response = await fetch(request);
+        const response = await fetch(request, {cache:'no-store', signal:controller.signal});
+        if (!response.ok) throw new Error('Navigation unavailable');
         return cacheResponse(event, request, response);
       } catch (_) {
-        return (await caches.match(fallback)) || Response.error();
-      }
+        return cached || (await caches.match(fallback)) || Response.error();
+      } finally { clearTimeout(timer); }
     })());
     return;
   }
