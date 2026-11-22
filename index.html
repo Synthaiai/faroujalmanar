@@ -2949,6 +2949,11 @@
         CATS = initialData.categories;
       }
 
+      CATS = CATS.filter(Boolean).map(c => {
+        const printed = initialData.categories.find(p => p.id === c.id);
+        return printed ? {...c, name:printed.name, order:printed.order} : c;
+      });
+      if (!CATS.some(c => c.id === 'crispy')) CATS.push(initialData.categories.find(c => c.id === 'crispy'));
       // أبقِ قسم سيت منيو الجديد ظاهراً مباشرةً، حتى قبل أول مزامنة للسحابة.
       const hasCloudSetMenuCategory = CATS.some(c => c.id === 'setmenu');
       const localSetCategory = (typeof initialData !== 'undefined' && initialData.categories)
@@ -2983,6 +2988,7 @@
       }
       mergedItems.forEach(it => {
         if (!it) return;
+        it = reconcilePrintedMenuItem(it);
         const local = (typeof initialData !== 'undefined' && initialData.items)
           ? initialData.items.find(x => String(x.id) === String(it.id) || String(x.name).trim() === String(it.name).trim())
           : null;

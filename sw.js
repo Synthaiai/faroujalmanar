@@ -1,4 +1,4 @@
-const CACHE = 'farouj-offline-v11';
+const CACHE = 'farouj-offline-v12';
 const CORE = [
   './', './index.html', './admin.html', './firebase-config.js',
   './manifest.json', './offline-assets.json',

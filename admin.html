@@ -884,6 +884,7 @@
                 return;
             }
             db = firebase.database().ref(MENU_PATH);
+            migratePrintedMenu();
             ensureBundledSetMenu();
             
             // ترتيب الأقسام المفضّل (نفس ترتيب الموقع)
@@ -1037,7 +1038,7 @@
             const container = document.getElementById('mainListing');
             container.innerHTML = '';
 
-            const items = (Array.isArray(data.items) ? data.items : Object.values(data.items)).slice();
+            const items = (Array.isArray(data.items) ? data.items : Object.values(data.items)).filter(Boolean).map(reconcilePrintedMenuItem);
             if(!HAS_CLOUD_SETMENU && typeof initialData !== 'undefined' && initialData.items) {
                 initialData.items.filter(it => it.cat === 'setmenu').forEach(local => {
                     const alreadyAdded = items.some(it => it && (
@@ -1158,7 +1159,8 @@
                 const fallbackItem = (typeof initialData !== 'undefined' && initialData.items)
                     ? initialData.items.find(local => String(local.id) === String(id))
                     : null;
-                const it = snap.val() || fallbackItem;
+                const rawItem = snap.val() || fallbackItem;
+                const it = rawItem ? reconcilePrintedMenuItem(rawItem) : null;
                 if(it) {
                     openModal('edit');
                     document.getElementById('modalTitle').innerText = 'تعديل الوجبة: ' + it.name;
@@ -1229,6 +1231,7 @@
                 cat: document.getElementById('mealCat').value,
                 name: document.getElementById('mealName').value,
                 desc: document.getElementById('mealDesc').value,
+                menuRevision: PRINTED_MENU_REVISION,
                 price: parseInt(document.getElementById('mealPrice').value),
                 img: isEmbedded ? '' : imgVal,
                 hasImg: imgVal !== '',
@@ -1342,6 +1345,28 @@
                 status.style.color = '#d33';
                 status.innerText = 'تعذّر معالجة الصورة، جرّب صورة أخرى.';
             }
+        }
+
+        async function migratePrintedMenu() {
+            try {
+                const revision = await db.child('printedMenuRevision').once('value');
+                if(Number(revision.val() || 0) >= PRINTED_MENU_REVISION) return;
+                const snapshot = await db.child('items').once('value');
+                const updates = {};
+                Object.values(snapshot.val() || {}).filter(Boolean).forEach(item => {
+                    if (Number(item.menuRevision || 0) >= PRINTED_MENU_REVISION) return;
+                    const corrected = reconcilePrintedMenuItem(item);
+                    if (corrected === item) return;
+                    ['name','price','desc','cat','badge','menuRevision'].forEach(field => {
+                        updates['items/' + item.id + '/' + field] = corrected[field];
+                    });
+                });
+                initialData.categories.forEach(category => {
+                    updates['categories/' + category.id] = category;
+                });
+                updates.printedMenuRevision = PRINTED_MENU_REVISION;
+                if(Object.keys(updates).length) await db.update(updates);
+            } catch(error) { console.error('Printed menu synchronization failed', error); }
         }
 
         function showToast(msg) {
